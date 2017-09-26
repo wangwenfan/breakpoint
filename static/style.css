@@ -1,0 +1,27 @@
+body {
+    font-family: Arial;
+}
+form {
+    margin: 50px auto;
+    width: 600px;
+}
+
+input[type="button"] {
+    cursor: pointer;
+}
+table {
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    border-collapse: collapse;
+}
+
+table th {
+    color: #666;
+}
+table td,
+table th {
+    padding: 5px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 14px;
+}
