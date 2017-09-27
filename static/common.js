@@ -1,7 +1,44 @@
 /**
  * Created by Administrator on 2017/7/21 0021.
+ * js文件分片上传
  */
 var UP = {
+    /**
+     * [__init 初始化]
+     * @Author   王文凡
+     * @DateTime 2017-09-27
+     * @version  1.0
+     * @param    {[type]}   param [description]
+     * @return   {[type]}         [description]
+     */
+    __init: function(param) {
+        this.__input.param = param;
+    },
+    /**
+     * [__msg 定义提示信息]
+     * @type {Object}
+     */
+    __msg: {
+        done: '上传成功',
+        failed: '上传失败',
+        in : '上传中...',
+        paused: '暂停中...',
+        incomplete: '上传不完整'
+    },
+    /**
+     * [__input 定义状态值和变量]
+     * @type {Object}
+     */
+    __input: {
+        //上传按钮对象
+        fo: null,
+        //暂停状态
+        isPaused: 0,
+        //浏览器刷新中断状态
+        flushStatus: 0,
+        param: null,
+        file_obj:null
+    },
     /**
      * [__show 选择上传显示上传信息]
      * @Author   王文凡
@@ -56,35 +93,41 @@ var UP = {
      */
     __allUpload: function(self) {
         // 未选择文件
-        if (!$('#myFile').val()) {
-            $('#myFile').focus();
+        if (!$(this.__input.param.myFile).val()) {
+            $(this.__input.param.myFile).focus();
         }
         // 模拟点击其他可上传的文件
         else {
             $('#upload-list .upload-item-btn').each(function() {
-                $(self).click();
+                $(this).click();
             });
         }
     },
-    //定义提示信息
-    __msg: {
-        done: '上传成功',
-        failed: '上传失败',
-        in : '上传中...',
-        paused: '暂停中...',
-        incomplete: '上传不完整'
-    },
-    //定义状态值
-    __input: {
-        //上传按钮对象
-        fo: null,
-        //暂停状态
-        isPaused: 0,
-        //浏览器刷新中断状态
-        flushStatus: 0
+    /**
+     * 上传文件时，提取相应匹配的文件项
+     * @param  {String} fileName   需要匹配的文件名
+     * @return {FileList}          匹配的文件项目
+     */
+    __findTheFile: function(fileName) {
+        var files = $(this.__input.param.myFile)[0].files,
+            theFile;
 
+        for (var i = 0, j = files.length; i < j; ++i) {
+            if (files[i].name === fileName) {
+                theFile = files[i];
+                break;
+            }
+        }
+        return theFile ? theFile : [];
     },
-    //定义文件基本信息
+    /**
+     * [__fileInfo 获取文件基本信息]
+     * @Author   王文凡
+     * @DateTime 2017-09-27
+     * @version  1.0
+     * @param    {[type]}   self [文件对象]
+     * @return   {[type]}        [description]
+     */
     __fileInfo: function(self) {
         var $this = $(self);
         var info = {
@@ -100,6 +143,7 @@ var UP = {
             percent: 0,
             chunk: 0
         };
+        this.__input.file_obj = info;
         return info;
     },
     /**
@@ -122,28 +166,39 @@ var UP = {
         }
         // 进行开始/继续上传操作
         else if (file_obj.state === 'paused' || file_obj.state === 'default') {
-            file_obj.fileThat.val('暂停上传').attr('data-state', 'uploading');
-            that.__input.isPaused = 0;
+           
             //中途浏览器刷新断掉后继续上传分片加1
             var c = window.localStorage.getItem(file_obj.fileName + '_chunk');
+            if((file_obj.chunks()-1) == c){
+                alert("该文件已上传！");return;
+            }
             if (c > 1 && that.__input.flushStatus == 0) {
                 window.localStorage.setItem(file_obj.fileName + '_chunk', ++c);
             }
+            that.__input.isPaused = 0;
             that.__input.flushStatus = 1;
+            file_obj.fileThat.val('暂停上传').attr('data-state', 'uploading');
             // 第一次点击上传
             that.__startUpload('first');
         }
     },
 
-    // 上传操作 times: 第几次
+    /**
+     * [__startUpload 上传操作]
+     * @Author   王文凡
+     * @DateTime 2017-09-27
+     * @version  1.0
+     * @param    {[type]}   times [第几次]
+     * @return   {[type]}         [description]
+     */
     __startUpload: function(times) {
         var that = this;
-        var file_obj = that.__fileInfo(that.__input.fo);
-        console.log("共："+file_obj.chunks()+"片");
+        var file_obj = that.__input.file_obj;
+        console.log("共：" + file_obj.chunks() + "片,总大小：" + file_obj.totalSize);
         // 上传之前查询是否以及上传过分片
         file_obj.chunk = window.localStorage.getItem(file_obj.fileName + '_chunk') || 0;
         file_obj.chunk = parseInt(file_obj.chunk, 10);
-        console.log("当前第："+file_obj.chunk+"片");
+        console.log("当前第：" + (file_obj.chunk + 1) + "片");
         // 判断是否为末分片
         var isLastChunk = (file_obj.chunk == (file_obj.chunks() - 1) ? 1 : 0);
 
@@ -168,7 +223,7 @@ var UP = {
         // 上传
         $.ajax({
             type: 'post',
-            url: '/fileTest.php',
+            url: that.__input.param.ServerUrl,
             data: fd,
             processData: false,
             contentType: false,
@@ -181,7 +236,7 @@ var UP = {
                     // 记录已经上传的百分比
                     window.localStorage.setItem(file_obj.fileName + '_p', percent);
                     // 已经上传完毕
-                    if (file_obj.chunk === (file_obj.chunks - 1)) {
+                    if (file_obj.chunk === (file_obj.chunks() - 1)) {
                         file_obj.progress.text(that.__msg['done']);
                         file_obj.fileThat.val('已经上传').prop('disabled', true).css('cursor', 'not-allowed');
                         if (!$('#upload-list').find('.upload-item-btn:not(:disabled)').length) {
@@ -206,41 +261,30 @@ var UP = {
                 progress.text(that.__msg['failed']);
             }
         });
-    },
-
-    /**
-     * 上传文件时，提取相应匹配的文件项
-     * @param  {String} fileName   需要匹配的文件名
-     * @return {FileList}          匹配的文件项目
-     */
-    __findTheFile: function(fileName) {
-        var files = $('#myFile')[0].files,
-            theFile;
-
-        for (var i = 0, j = files.length; i < j; ++i) {
-            if (files[i].name === fileName) {
-                theFile = files[i];
-                break;
-            }
-        }
-        return theFile ? theFile : [];
     }
 
 };
 
 
+$(function() {
+    // 选择文件-显示文件信息
+    $(UP.__input.param.myFile).change(function(e) {
+        UP.__show(this);
+    });
 
-// 选择文件-显示文件信息
-$('#myFile').change(function(e) {
-    UP.__show(this);
+    // 全部上传操作
+    $(document).on('click', '#upload-all-btn', function() {
+        UP.__allUpload(this);
+    });
+
+    // 上传文件
+    $(document).on('click', '.upload-item-btn', function() {
+        UP.__toUpload(this);
+    });
 });
 
-// 全部上传操作
-$(document).on('click', '#upload-all-btn', function() {
-    UP.__allUpload(this);
-});
-
-// 上传文件
-$(document).on('click', '.upload-item-btn', function() {
-    UP.__toUpload(this);
+//初始化
+UP.__init({
+    myFile: "#myFile", //fileinput节点
+    ServerUrl:"/fileTest.php"//服务器地址
 });
