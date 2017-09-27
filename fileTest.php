@@ -25,7 +25,6 @@ if ($_FILES['theFile']['error'] > 0) {
 	if ($isFirstUpload == '1' && file_exists('upload/' . $fileName) && filesize('upload/' . $fileName) == $totalSize) {
 		unlink('upload/' . $fileName);
 	}
-
 	// 否则继续追加文件数据
 	if (!file_put_contents('upload/' . $fileName, file_get_contents($_FILES['theFile']['tmp_name']), FILE_APPEND)) {
 		$status = 501;
