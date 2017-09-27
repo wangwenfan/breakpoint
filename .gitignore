@@ -1,4 +1,4 @@
 # CakePHP 3
 
 /vendor/*
-/upload
+/upload/*

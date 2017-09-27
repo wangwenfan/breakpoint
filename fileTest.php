@@ -13,19 +13,10 @@ $isFirstUpload = $_REQUEST['isFirstUpload'];
 if ($_FILES['theFile']['error'] > 0) {
 	$status = 500;
 } else {
-	// 此处为一般的文件上传操作
-	// if (!move_uploaded_file($_FILES['theFile']['tmp_name'], 'upload/'. $_FILES['theFile']['name'])) {
-	//     $status = 501;
-	// } else {
-	//     $status = 200;
-	// }
-
-	// 以下部分为文件断点续传操作
 	// 如果第一次上传的时候，该文件已经存在，则删除文件重新上传
 	if ($isFirstUpload == '1' && file_exists('upload/' . $fileName) && filesize('upload/' . $fileName) == $totalSize) {
 		unlink('upload/' . $fileName);
 	}
-
 	// 否则继续追加文件数据
 	if (!file_put_contents('upload/' . $fileName, file_get_contents($_FILES['theFile']['tmp_name']), FILE_APPEND)) {
 		$status = 501;
