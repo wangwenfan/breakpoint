@@ -10,7 +10,6 @@ $totalSize = $_REQUEST['totalSize'];
 $isLastChunk = $_REQUEST['isLastChunk'];
 //是否是第一次上传
 $isFirstUpload = $_REQUEST['isFirstUpload'];
-
 if ($_FILES['theFile']['error'] > 0) {
 	$status = 500;
 } else {
