@@ -124,6 +124,7 @@ $(document).on('click', '.upload-item-btn', function() {
         // 上传之前查询是否以及上传过分片
         chunk = window.localStorage.getItem(fileName + '_chunk') || 0;
         chunk = parseInt(chunk, 10);
+        console.log("共"+chunks+"第"+chunk+"片");
         // 判断是否为末分片
         var isLastChunk = (chunk == (chunks - 1) ? 1 : 0);
 
